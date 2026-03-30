@@ -1,27 +1,12 @@
 <%- include('partials/header', { title: 'Budget — ExpenseIQ' }) %>
 
-<!--
-  BUDGET PAGE
-  ───────────
-  Sections:
-  1. Overall budget progress
-  2. Per-category budget cards
-  3. Budget vs Spent bar chart
-  4. Budget tips
-  5. Set Budget modal
-  
-  EJS Variables:
-  - user:          { name, email }
-  - budgets:       array | null
-  - budgetSummary: { spent, total }
--->
+
 
 <div class="app-layout">
   <%- include('partials/sidebar', { page: 'budget', user: user }) %>
 
   <div class="main-content">
 
-    <!-- TOPBAR -->
     <div class="topbar">
       <div class="topbar-left">
         <span class="topbar-title">Budget Planner</span>
@@ -42,7 +27,7 @@
 
     <div class="page-body">
 
-      <!-- 1. OVERALL BUDGET STATUS -->
+      
       <div class="overall-budget mb-24">
         <div class="flex-between" style="margin-bottom:12px;">
           <div>
@@ -88,7 +73,7 @@
       </div>
 
 
-      <!-- 2. PER-CATEGORY BUDGET CARDS -->
+     
       <%
         // Sample data — in real app this comes from MongoDB
         const budgetCards = budgets || [
@@ -107,7 +92,7 @@
         %>
           <div class="budget-card">
 
-            <!-- Card top: icon + name + status -->
+           
             <div class="budget-card-top">
               <div class="budget-cat-info">
                 <div class="budget-cat-icon" style="background:<%= b.color %>22;">
@@ -120,7 +105,7 @@
               </span>
             </div>
 
-            <!-- Amounts -->
+          
             <div class="budget-amounts">
               <span class="budget-spent" style="color:<%= b.color %>;">
                 ₹<%= b.spent.toLocaleString('en-IN') %>
@@ -130,14 +115,14 @@
               </span>
             </div>
 
-            <!-- Progress bar -->
+           
             <div class="progress-bar-wrap">
               <div class="progress-bar bar-<%= b.status %>"
                    style="width:<%= pct %>%;">
               </div>
             </div>
 
-            <!-- Footer stats -->
+            
             <div class="budget-footer">
               <span><%= pct %>% used</span>
               <span class="<%= b.status==='exceeded' ? 'over' : 'left' %>">
@@ -149,7 +134,7 @@
               </span>
             </div>
 
-            <!-- Card actions -->
+           
             <div style="display:flex;gap:8px;margin-top:14px;">
               <button class="btn btn-outline btn-sm btn-full"
                       onclick="openEditBudget('<%= b.cat %>', <%= b.limit %>)">
@@ -166,10 +151,10 @@
       </div>
 
 
-      <!-- 3. BUDGET CHART + TIPS -->
+      
       <div class="charts-row-equal">
 
-        <!-- Bar chart: Spent vs Limit -->
+        
         <div class="card">
           <div class="card-header">
             <div>
@@ -182,7 +167,7 @@
           </div>
         </div>
 
-        <!-- Budget tips -->
+       
         <div class="card">
           <div class="card-header">
             <div class="card-title">💡 Smart Tips</div>
@@ -207,12 +192,12 @@
 
       </div>
 
-    </div><!-- /page-body -->
+    </div>
   </div>
 </div>
 
 
-<!-- SET BUDGET MODAL -->
+
 <div class="modal-backdrop" id="budgetModal" onclick="closeBudgetModalOutside(event)">
   <div class="modal-box">
     <div class="modal-header">
@@ -264,7 +249,7 @@
 <script>
   feather.replace();
 
-  // ── Budget bar chart
+  
   new Chart(document.getElementById('budgetChart'), {
     type: 'bar',
     data: {
@@ -302,7 +287,7 @@
     }
   });
 
-  // ── Budget modal helpers
+  
   function openBudgetModal() {
     document.getElementById('budgetModal').classList.add('open');
     feather.replace();

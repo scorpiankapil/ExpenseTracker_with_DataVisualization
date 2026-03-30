@@ -1,21 +1,5 @@
 <%- include('partials/header', { title: 'Transactions — ExpenseIQ' }) %>
 
-<!--
-  TRANSACTIONS PAGE
-  ─────────────────
-  Features:
-  - 3 summary cards
-  - Filter chips (All, Income, Expense, by category)
-  - Sort dropdown
-  - Live search
-  - Full table with Edit / Delete
-  - Add Transaction modal
-  
-  EJS Variables:
-  - user:         { name, email }
-  - summary:      { income, expense }
-  - transactions: array
--->
 
 <div class="app-layout">
   <%- include('partials/sidebar', { page: 'transactions', user: user }) %>
@@ -47,7 +31,7 @@
 
     <div class="page-body">
 
-      <!-- SUMMARY CARDS (3 columns) -->
+     
       <div class="cards-grid mb-24" style="grid-template-columns:repeat(3,1fr);">
         <div class="summary-card card-income">
           <div class="card-top">
@@ -82,9 +66,9 @@
       </div>
 
 
-      <!-- FILTER CHIPS + SORT -->
+      
       <div class="filter-bar mb-20">
-        <!-- Type / category filter chips -->
+       
         <button class="filter-chip active" onclick="setFilter('all', this)">All</button>
         <button class="filter-chip" onclick="setFilter('income', this)">↑ Income</button>
         <button class="filter-chip" onclick="setFilter('expense', this)">↓ Expense</button>
@@ -94,7 +78,7 @@
         <button class="filter-chip" onclick="setFilter('Shopping', this)">🛒 Shopping</button>
         <button class="filter-chip" onclick="setFilter('Health', this)">💊 Health</button>
 
-        <!-- Sort (pushed to right) -->
+       
         <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
           <span style="font-size:12px;color:var(--text-2);">Sort by:</span>
           <select class="filter-control" onchange="sortTable(this.value)" style="min-width:130px;">
@@ -107,7 +91,7 @@
       </div>
 
 
-      <!-- TRANSACTIONS TABLE -->
+     
       <div class="card">
         <div class="card-header">
           <div class="card-title">All Transactions</div>
@@ -133,10 +117,7 @@
 
               <% if (transactions && transactions.length > 0) { %>
                 <% transactions.forEach(function(tx, i) { %>
-                  <!--
-                    data-* attributes are used by JS for filtering and sorting
-                    without making any server requests
-                  -->
+                 
                   <tr
                     data-type="<%= tx.type %>"
                     data-category="<%= tx.category %>"
@@ -144,10 +125,10 @@
                     data-amount="<%= tx.amount %>"
                     data-date="<%= new Date(tx.date).getTime() %>"
                   >
-                    <!-- Row number -->
+                    
                     <td style="color:var(--text-3);font-size:13px;"><%= i + 1 %></td>
 
-                    <!-- Transaction name + note -->
+                    
                     <td>
                       <div class="tx-item">
                         <div class="tx-icon" style="background:<%=
@@ -176,33 +157,33 @@
                       </div>
                     </td>
 
-                    <!-- Category badge -->
+                    
                     <td>
                       <span class="badge badge-<%= (tx.category||'other').toLowerCase() %>">
                         <%= tx.category || 'Other' %>
                       </span>
                     </td>
 
-                    <!-- Date -->
+                   
                     <td style="font-size:13px;color:var(--text-2);">
                       <%= new Date(tx.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) %>
                     </td>
 
-                    <!-- Type -->
+                    
                     <td>
                       <span class="badge <%= tx.type==='income' ? 'badge-income' : 'badge-expense' %>">
                         <%= tx.type==='income' ? '↑ Income' : '↓ Expense' %>
                       </span>
                     </td>
 
-                    <!-- Amount -->
+                   
                     <td class="text-right">
                       <span class="<%= tx.type==='income' ? 'amount-in' : 'amount-out' %>">
                         <%= tx.type==='income' ? '+' : '-' %>₹<%= tx.amount.toLocaleString('en-IN') %>
                       </span>
                     </td>
 
-                    <!-- Edit / Delete -->
+                    
                     <td class="text-center">
                       <div class="row-actions">
                         <button class="action-btn" title="Edit"
@@ -234,7 +215,7 @@
           </table>
         </div>
 
-        <!-- Pagination (shown only if more than 10 rows) -->
+        
         <% if (transactions && transactions.length > 10) { %>
           <div class="pagination">
             <span class="pagination-info">
@@ -250,12 +231,12 @@
         <% } %>
       </div>
 
-    </div><!-- /page-body -->
+    </div>
   </div>
 </div>
 
 
-<!-- ADD TRANSACTION MODAL (same as dashboard) -->
+
 <div class="modal-backdrop" id="modalBackdrop" onclick="closeModalOutside(event)">
   <div class="modal-box">
     <div class="modal-header">
@@ -334,10 +315,10 @@
   feather.replace();
   document.getElementById('txDateInput').value = new Date().toISOString().split('T')[0];
 
-  // ── Active filter tracker
+  
   let activeFilter = 'all';
 
-  // ── Filter chips
+  
   function setFilter(filter, btn) {
     activeFilter = filter;
     document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
@@ -345,10 +326,9 @@
     applyFilters();
   }
 
-  // ── Live search
   function liveSearch(q) { applyFilters(q); }
 
-  // ── Apply both filter + search together
+  
   function applyFilters(searchQuery) {
     const q    = searchQuery !== undefined ? searchQuery : document.getElementById('searchInput').value.toLowerCase();
     const rows = document.querySelectorAll('#txTableBody tr[data-type]');
@@ -373,7 +353,7 @@
     document.getElementById('rowCount').textContent = count + ' records';
   }
 
-  // ── Sort rows
+  
   function sortTable(val) {
     const [field, dir] = val.split('-');
     const tbody = document.getElementById('txTableBody');
@@ -388,14 +368,14 @@
     rows.forEach(r => tbody.appendChild(r));
   }
 
-  // ── Edit (pre-fill modal)
+  
   function editRow(id) {
     document.getElementById('modalTitle').textContent = 'Edit Transaction';
     document.getElementById('txForm').action = '/transactions/edit/' + id;
     openModal();
   }
 
-  // ── Delete row
+  
   async function deleteRow(id, btn) {
     if (!confirm('Delete this transaction?')) return;
     try {
@@ -412,7 +392,7 @@
     }
   }
 
-  // ── Export
+ 
   function exportData() {
     window.location.href = '/reports/export?format=csv';
   }
