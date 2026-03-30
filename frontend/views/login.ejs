@@ -1,0 +1,127 @@
+<%- include('partials/header', { title: 'Login — ExpenseIQ' }) %>
+
+<div class="auth-layout">
+
+  <div class="auth-visual">
+    <div class="auth-visual-inner">
+      <a href="/" class="logo">
+        <div class="logo-icon">₹</div>
+        <span class="logo-text">ExpenseIQ</span>
+      </a>
+      <h1 class="auth-visual-title">
+        Take control of<br /><span>your finances</span><br />today.
+      </h1>
+      <p class="auth-visual-desc">
+        Track income, manage expenses, set budgets, and see exactly where your money goes every month.
+      </p>
+      <div class="auth-metric-cards">
+        <div class="auth-metric">
+          <div class="auth-metric-dot" style="background:var(--income);"></div>
+          <div class="auth-metric-info">
+            <strong>₹42,500</strong>
+            <span>Monthly Income</span>
+          </div>
+        </div>
+        <div class="auth-metric">
+          <div class="auth-metric-dot" style="background:var(--expense);"></div>
+          <div class="auth-metric-info">
+            <strong>₹28,000</strong>
+            <span>Total Expenses</span>
+          </div>
+        </div>
+        <div class="auth-metric">
+          <div class="auth-metric-dot" style="background:var(--savings);"></div>
+          <div class="auth-metric-info">
+            <strong>34.1% saved</strong>
+            <span>Savings Rate this month</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="auth-form-panel">
+    <div class="auth-form-box">
+
+      <h2 class="auth-form-title">Welcome back 👋</h2>
+      <p class="auth-form-subtitle">Sign in to your ExpenseIQ account</p>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-error">
+          <svg data-feather="alert-circle" width="16" height="16"></svg>
+          <%= error %>
+        </div>
+      <% } %>
+
+      <% if (typeof success !== 'undefined' && success) { %>
+        <div class="alert alert-success">
+          <svg data-feather="check-circle" width="16" height="16"></svg>
+          <%= success %>
+        </div>
+      <% } %>
+
+      <form action="/auth/login" method="POST" id="loginForm">
+
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <div class="input-wrap">
+            <svg class="icon-left" data-feather="mail" width="16" height="16"></svg>
+            <input type="email" name="email" class="form-control" placeholder="you@example.com" required autocomplete="email" />
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-wrap icon-right-only" style="position:relative;">
+            <input type="password" name="password" id="loginPassword" class="form-control" placeholder="Enter your password" required autocomplete="current-password" />
+            <span class="icon-right" onclick="togglePass('loginPassword', this)">
+              <svg data-feather="eye" width="16" height="16"></svg>
+            </span>
+          </div>
+        </div>
+
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+          <label class="form-check" style="margin:0;">
+            <input type="checkbox" name="rememberMe" />
+            <span>Remember me</span>
+          </label>
+          <a href="/auth/forgot-password" style="font-size:13px;color:var(--text-2);">Forgot password?</a>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-full" id="loginBtn">
+          <svg data-feather="arrow-right" width="16" height="16"></svg>
+          Sign In
+        </button>
+
+      </form>
+
+      <p class="auth-switch">
+        Don't have an account? <a href="/auth/register">Create one free →</a>
+      </p>
+
+    </div>
+  </div>
+
+</div>
+
+<script>
+  feather.replace();
+
+  function togglePass(inputId, iconEl) {
+    const input = document.getElementById(inputId);
+    input.type  = input.type === 'password' ? 'text' : 'password';
+    iconEl.innerHTML = input.type === 'text'
+      ? '<svg data-feather="eye-off" width="16" height="16"></svg>'
+      : '<svg data-feather="eye" width="16" height="16"></svg>';
+    feather.replace();
+  }
+
+  document.getElementById('loginForm').addEventListener('submit', function() {
+    const btn = document.getElementById('loginBtn');
+    btn.innerHTML = '<span class="spinner"></span> Signing in...';
+    btn.disabled  = true;
+  });
+</script>
+
+</body>
+</html>
