@@ -3,18 +3,18 @@
 
 A clean and responsive frontend UI for ExpenseIQ built using EJS, HTML, CSS, and JavaScript.
 
-## 🚀 Features
+##  Features
 
 * Login & Register UI
 * Dark modern design
 * Responsive layout
 * Reusable EJS components
 
-## 🛠 Tech Stack
+##  Tech Stack
 
 EJS • HTML • CSS • JavaScript • Node.js
 
-## ⚙️ Run Locally
+##  Run Locally
 
 ```bash
 npm install
@@ -23,6 +23,6 @@ node app.js
 
 Open: http://localhost:3000
 
-## 👨‍💻 Author
+##  Author
 
 Kapil Patel
