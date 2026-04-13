@@ -1,0 +1,427 @@
+<%- include('partials/header', { title: 'Dashboard — ExpenseIQ' }) %>
+
+<!--
+  DASHBOARD PAGE
+  ──────────────
+  Sections:
+  1. Sidebar
+  2. Topbar
+  3. Summary Cards (Income, Expense, Balance, Savings)
+  4. Charts (Bar/Line + Donut)
+  5. Recent Transactions list
+  6. Category Breakdown
+  7. Add Transaction Modal
+  
+  EJS Variables:
+  - user:         { name, email }
+  - summary:      { income, expense }
+  - transactions: array of transaction objects
+  - monthlyData:  array of { month, income, expense }
+  - categoryData: array of { category, amount }
+-->
+
+<div class="app-layout">
+
+  <!-- Sidebar (from partial) -->
+  <%- include('partials/sidebar', { page: 'dashboard', user: user }) %>
+
+  <!-- Main content area -->
+  <div class="main-content">
+
+    <!-- ── TOPBAR ───────────────────────────── -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title">Dashboard</span>
+        <span class="topbar-date">
+          <%= new Date().toLocaleDateString('en-IN', { weekday:'long', year:'numeric', month:'long', day:'numeric' }) %>
+        </span>
+      </div>
+
+      <div class="topbar-right">
+        <!-- Search box -->
+        <div class="topbar-search">
+          <svg data-feather="search" width="14" height="14"></svg>
+          <input type="text" placeholder="Search transactions..." />
+        </div>
+
+        <!-- Month picker -->
+        <select class="month-select" id="monthSelect" onchange="changeMonth(this.value)">
+          <option value="0">January</option>  <option value="1">February</option>
+          <option value="2">March</option>    <option value="3">April</option>
+          <option value="4">May</option>      <option value="5">June</option>
+          <option value="6">July</option>     <option value="7">August</option>
+          <option value="8">September</option><option value="9">October</option>
+          <option value="10">November</option><option value="11">December</option>
+        </select>
+
+        <!-- Notification bell -->
+        <div class="notif-btn" title="Notifications">
+          <svg data-feather="bell" width="16" height="16"></svg>
+          <span class="notif-dot"></span>
+        </div>
+
+        <!-- Add transaction button -->
+        <button class="btn btn-primary btn-sm" onclick="openModal()">
+          <svg data-feather="plus" width="14" height="14"></svg>
+          Add Transaction
+        </button>
+      </div>
+    </div>
+
+
+    <!-- ── PAGE BODY ─────────────────────────── -->
+    <div class="page-body">
+
+      <!-- 1. SUMMARY CARDS -->
+      <div class="cards-grid mb-24">
+
+        <!-- Income Card -->
+        <div class="summary-card card-income">
+          <div class="card-top">
+            <span class="card-label">Total Income</span>
+            <div class="card-icon icon-income">
+              <svg data-feather="trending-up" width="18" height="18"></svg>
+            </div>
+          </div>
+          <div class="card-amount">
+            ₹<%= (summary.income || 0).toLocaleString('en-IN') %>
+          </div>
+          <div class="card-trend">
+            <svg data-feather="arrow-up-right" width="13" height="13" class="trend-up"></svg>
+            <span class="trend-up">+12%</span>&nbsp;vs last month
+          </div>
+        </div>
+
+        <!-- Expense Card -->
+        <div class="summary-card card-expense">
+          <div class="card-top">
+            <span class="card-label">Total Expense</span>
+            <div class="card-icon icon-expense">
+              <svg data-feather="trending-down" width="18" height="18"></svg>
+            </div>
+          </div>
+          <div class="card-amount">
+            ₹<%= (summary.expense || 0).toLocaleString('en-IN') %>
+          </div>
+          <div class="card-trend">
+            <svg data-feather="arrow-up-right" width="13" height="13" class="trend-down"></svg>
+            <span class="trend-down">+5%</span>&nbsp;vs last month
+          </div>
+        </div>
+
+        <!-- Balance Card -->
+        <div class="summary-card card-balance">
+          <div class="card-top">
+            <span class="card-label">Net Balance</span>
+            <div class="card-icon icon-balance">
+              <svg data-feather="dollar-sign" width="18" height="18"></svg>
+            </div>
+          </div>
+          <div class="card-amount">
+            ₹<%= ((summary.income || 0) - (summary.expense || 0)).toLocaleString('en-IN') %>
+          </div>
+          <div class="card-trend">Income minus Expenses</div>
+        </div>
+
+        <!-- Savings Card -->
+        <div class="summary-card card-savings">
+          <div class="card-top">
+            <span class="card-label">Savings Rate</span>
+            <div class="card-icon icon-savings">
+              <svg data-feather="percent" width="18" height="18"></svg>
+            </div>
+          </div>
+          <div class="card-amount">
+            <%
+              const rate = summary.income > 0
+                ? Math.round(((summary.income - summary.expense) / summary.income) * 100)
+                : 0;
+            %><%= rate %>%
+          </div>
+          <div class="card-trend">
+            <svg data-feather="arrow-up-right" width="13" height="13" class="trend-up"></svg>
+            <span class="trend-up">+3%</span>&nbsp;vs last month
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- 2. CHARTS ROW (Bar chart + Donut chart) -->
+      <div class="charts-row mb-24">
+
+        <!-- Bar / Line Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Income vs Expense</div>
+              <div class="card-subtitle">Monthly comparison — last 6 months</div>
+            </div>
+            <!-- Tab switcher to change chart type -->
+            <div class="tab-switcher">
+              <button class="tab-btn active" onclick="switchChartType('bar', this)">Bar</button>
+              <button class="tab-btn"        onclick="switchChartType('line', this)">Line</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="incomeExpenseChart" height="240"></canvas>
+          </div>
+        </div>
+
+        <!-- Donut Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Spending by Category</div>
+              <div class="card-subtitle">This month breakdown</div>
+            </div>
+          </div>
+          <div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:16px;">
+            <canvas id="categoryDonut" width="200" height="200"></canvas>
+            <div id="donutLegend" style="width:100%;display:flex;flex-wrap:wrap;gap:8px;justify-content:center;"></div>
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- 3. BOTTOM ROW (Recent Transactions + Category Bars) -->
+      <div class="bottom-row">
+
+        <!-- Recent Transactions -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Recent Transactions</div>
+            <a href="/transactions" style="font-size:13px;color:var(--accent);">View all →</a>
+          </div>
+
+          <% if (transactions && transactions.length > 0) { %>
+            <div class="table-wrap">
+              <table>
+                <tbody>
+                  <% transactions.slice(0, 6).forEach(function(tx) { %>
+                    <tr>
+                      <td>
+                        <div class="tx-item">
+                          <!-- Category emoji icon -->
+                          <div class="tx-icon" style="background:<%=
+                            tx.category==='Food'     ? 'rgba(245,158,11,0.12)'  :
+                            tx.category==='Travel'   ? 'rgba(79,141,255,0.12)'  :
+                            tx.category==='Health'   ? 'rgba(0,200,150,0.12)'   :
+                            tx.category==='Shopping' ? 'rgba(167,139,250,0.12)' :
+                            tx.category==='Rent'     ? 'rgba(255,77,109,0.12)'  :
+                            'rgba(122,144,181,0.12)'
+                          %>">
+                            <%=
+                              tx.category==='Food'     ? '🍛' :
+                              tx.category==='Travel'   ? '🚗' :
+                              tx.category==='Health'   ? '💊' :
+                              tx.category==='Shopping' ? '🛒' :
+                              tx.category==='Rent'     ? '🏠' :
+                              tx.category==='Salary'   ? '💰' : '📝'
+                            %>
+                          </div>
+                          <div>
+                            <div class="tx-name"><%= tx.title %></div>
+                            <div class="tx-note">
+                              <%= new Date(tx.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short' }) %>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>
+                        <span class="badge badge-<%= (tx.category||'other').toLowerCase() %>">
+                          <%= tx.category || 'Other' %>
+                        </span>
+                      </td>
+                      <td class="text-right">
+                        <span class="<%= tx.type==='income' ? 'amount-in' : 'amount-out' %>">
+                          <%= tx.type==='income' ? '+' : '-' %>₹<%= tx.amount.toLocaleString('en-IN') %>
+                        </span>
+                      </td>
+                    </tr>
+                  <% }); %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="empty-state">
+              <div class="empty-icon">💸</div>
+              <h3>No transactions yet</h3>
+              <p>Click "Add Transaction" to get started</p>
+            </div>
+          <% } %>
+        </div>
+
+        <!-- Category Breakdown with Progress Bars -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Category Breakdown</div>
+            <span style="font-size:12px;color:var(--text-2);">This month</span>
+          </div>
+          <div class="cat-list">
+            <%
+              const catBreakdown = [
+                { name:'Food',     pct:32, color:'#f59e0b', amount:'₹8,960'  },
+                { name:'Rent',     pct:28, color:'#ff5c7a', amount:'₹7,840'  },
+                { name:'Travel',   pct:18, color:'#4f8dff', amount:'₹5,040'  },
+                { name:'Shopping', pct:12, color:'#a78bfa', amount:'₹3,360'  },
+                { name:'Health',   pct:7,  color:'#00c896', amount:'₹1,960'  },
+                { name:'Other',    pct:3,  color:'#3d526e', amount:'₹840'    },
+              ];
+            %>
+            <% catBreakdown.forEach(function(c) { %>
+              <div class="cat-item">
+                <div class="cat-dot" style="background:<%= c.color %>;"></div>
+                <span class="cat-name"><%= c.name %></span>
+                <div class="cat-bar-wrap">
+                  <div class="cat-bar" style="width:<%= c.pct %>%;background:<%= c.color %>;"></div>
+                </div>
+                <span class="cat-pct" style="color:<%= c.color %>;"><%= c.pct %>%</span>
+                <span class="cat-amount"><%= c.amount %></span>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /page-body -->
+  </div><!-- /main-content -->
+</div><!-- /app-layout -->
+
+
+<!-- ══ ADD TRANSACTION MODAL ══════════════════ -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="closeModalOutside(event)">
+  <div class="modal-box">
+
+    <div class="modal-header">
+      <h3 class="modal-title">Add Transaction</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <!-- Expense / Income toggle -->
+    <div class="type-toggle">
+      <button class="type-btn active-expense" id="expBtn" onclick="setType('expense')">
+        ↓ Expense
+      </button>
+      <button class="type-btn" id="incBtn" onclick="setType('income')">
+        ↑ Income
+      </button>
+    </div>
+
+    <form action="/transactions/add" method="POST">
+      <input type="hidden" name="type" id="txTypeInput" value="expense" />
+
+      <!-- Title -->
+      <div class="form-group">
+        <label class="form-label">Title / Description</label>
+        <div class="input-wrap">
+          <svg class="icon-left" data-feather="file-text" width="16" height="16"></svg>
+          <input type="text" name="title" class="form-control" placeholder="e.g. Grocery shopping" required />
+        </div>
+      </div>
+
+      <!-- Amount + Date -->
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount (₹)</label>
+          <input type="number" name="amount" class="form-control" placeholder="0" min="1" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" name="date" id="txDate" class="form-control" required />
+        </div>
+      </div>
+
+      <!-- Category -->
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select name="category" class="form-select" required>
+          <option value="">— Pick a category —</option>
+          <optgroup label="💸 Expenses">
+            <option value="Food">🍛 Food & Dining</option>
+            <option value="Travel">🚗 Travel & Transport</option>
+            <option value="Health">💊 Health & Medical</option>
+            <option value="Shopping">🛒 Shopping</option>
+            <option value="Rent">🏠 Rent & Housing</option>
+            <option value="Entertainment">🎬 Entertainment</option>
+            <option value="Education">📚 Education</option>
+            <option value="Utilities">⚡ Utilities</option>
+          </optgroup>
+          <optgroup label="💰 Income">
+            <option value="Salary">💰 Salary</option>
+            <option value="Freelance">💻 Freelance</option>
+            <option value="Investment">📈 Investment</option>
+            <option value="Gift">🎁 Gift</option>
+          </optgroup>
+          <option value="Other">📝 Other</option>
+        </select>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-group">
+        <label class="form-label">Notes (Optional)</label>
+        <textarea name="notes" class="form-control" placeholder="Any extra details..."></textarea>
+      </div>
+
+      <!-- Footer buttons -->
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <svg data-feather="check" width="15" height="15"></svg>
+          Save Transaction
+        </button>
+      </div>
+    </form>
+
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<!-- Our JS files -->
+<script src="/js/charts.js"></script>
+<script src="/js/main.js"></script>
+
+<script>
+  feather.replace();
+
+  // Set current month in selector
+  document.getElementById('monthSelect').value = new Date().getMonth();
+
+  // Set today's date as default in modal
+  document.getElementById('txDate').value = new Date().toISOString().split('T')[0];
+
+  // ── Pass server data to charts.js ──────────
+  // These arrays come from app.js via EJS
+  const MONTHLY_DATA  = <%- JSON.stringify(monthlyData || [
+    {month:'Oct',income:38000,expense:24000},
+    {month:'Nov',income:40000,expense:27000},
+    {month:'Dec',income:52000,expense:35000},
+    {month:'Jan',income:42000,expense:28000},
+    {month:'Feb',income:38000,expense:25000},
+    {month:'Mar',income:42500,expense:28000},
+  ]) %>;
+
+  const CATEGORY_DATA = <%- JSON.stringify(categoryData || [
+    {category:'Food',    amount:8960},
+    {category:'Rent',    amount:7840},
+    {category:'Travel',  amount:5040},
+    {category:'Shopping',amount:3360},
+    {category:'Health',  amount:1960},
+    {category:'Other',   amount:840 },
+  ]) %>;
+
+  // Initialize both charts
+  initBarChart(MONTHLY_DATA);
+  initDonutChart(CATEGORY_DATA);
+
+  function changeMonth(val) {
+    window.location.href = '/dashboard?month=' + val;
+  }
+</script>
+
+</body>
+</html>
