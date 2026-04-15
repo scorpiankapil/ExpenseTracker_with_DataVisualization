@@ -1,0 +1,266 @@
+<%- include('partials/header', { title: 'Register - ExpenseIQ' }) %>
+
+<!--
+  REGISTER PAGE
+  ─────────────
+  Layout: Two columns (same as login)
+  Left  → Branding panel
+  Right → Registration form
+  
+  EJS Variables needed:
+  - error: string | null
+-->
+
+<div class="auth-layout">
+
+  <!-- ── LEFT: Visual Panel ─────────────────── -->
+  <div class="auth-visual">
+    <div class="auth-visual-inner">
+
+      <a href="/" class="logo">
+        <div class="logo-icon">₹</div>
+        <span class="logo-text">ExpenseIQ</span>
+      </a>
+
+      <h1 class="auth-visual-title">
+        Start your<br /><span>financial</span><br />journey today.
+      </h1>
+
+      <p class="auth-visual-desc">
+        Create your free account in under a minute and start understanding your money like never before.
+      </p>
+
+      <div class="auth-metric-cards">
+        <div class="auth-metric">
+          <div class="auth-metric-dot" style="background:var(--accent);"></div>
+          <div class="auth-metric-info">
+            <strong>Free Forever</strong>
+            <span>No hidden charges</span>
+          </div>
+        </div>
+        <div class="auth-metric">
+          <div class="auth-metric-dot" style="background:var(--savings);"></div>
+          <div class="auth-metric-info">
+            <strong>Secure & Private</strong>
+            <span>JWT + bcrypt encryption</span>
+          </div>
+        </div>
+        <div class="auth-metric">
+          <div class="auth-metric-dot" style="background:var(--balance);"></div>
+          <div class="auth-metric-info">
+            <strong>Smart Insights</strong>
+            <span>Charts & budget alerts</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <!-- ── RIGHT: Register Form ───────────────── -->
+  <div class="auth-form-panel">
+    <div class="auth-form-box">
+
+      <h2 class="auth-form-title">Create account ✨</h2>
+      <p class="auth-form-subtitle">Fill in the details below to get started</p>
+
+      <!-- Error message from server -->
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-error">
+          <svg data-feather="alert-circle" width="16" height="16"></svg>
+          <%= error %>
+        </div>
+      <% } %>
+
+      <!-- REGISTER FORM -->
+      <form action="/auth/register" method="POST" id="registerForm">
+
+        <!-- Name row (two columns) -->
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">First Name</label>
+            <div class="input-wrap">
+              <svg class="icon-left" data-feather="user" width="16" height="16"></svg>
+              <input type="text" name="firstName" class="form-control" placeholder="Kapil" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Last Name</label>
+            <div class="input-wrap">
+              <svg class="icon-left" data-feather="user" width="16" height="16"></svg>
+              <input type="text" name="lastName" class="form-control" placeholder="Patel" required />
+            </div>
+          </div>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label class="form-label">Email Address</label>
+          <div class="input-wrap">
+            <svg class="icon-left" data-feather="mail" width="16" height="16"></svg>
+            <input type="email" name="email" class="form-control" placeholder="you@example.com" required />
+          </div>
+        </div>
+
+        <!-- Password -->
+        <div class="form-group">
+          <label class="form-label">Password</label>
+          <div class="input-wrap icon-right-only" style="position:relative;">
+            <input
+              type="password"
+              name="password"
+              id="regPassword"
+              class="form-control"
+              placeholder="Min. 8 characters"
+              required
+              minlength="8"
+              oninput="checkStrength(this.value)"
+            />
+            <span class="icon-right" onclick="togglePass('regPassword', this)">
+              <svg data-feather="eye" width="16" height="16"></svg>
+            </span>
+          </div>
+
+          <!-- Password strength indicator -->
+          <div class="strength-meter">
+            <div class="strength-bars">
+              <div class="strength-bar" id="sb1"></div>
+              <div class="strength-bar" id="sb2"></div>
+              <div class="strength-bar" id="sb3"></div>
+              <div class="strength-bar" id="sb4"></div>
+            </div>
+            <span class="strength-label" id="strengthLabel"></span>
+          </div>
+        </div>
+
+        <!-- Confirm Password -->
+        <div class="form-group">
+          <label class="form-label">Confirm Password</label>
+          <div class="input-wrap icon-right-only" style="position:relative;">
+            <input
+              type="password"
+              name="confirmPassword"
+              id="confirmPassword"
+              class="form-control"
+              placeholder="Repeat your password"
+              required
+              oninput="checkMatch()"
+            />
+            <span class="icon-right" onclick="togglePass('confirmPassword', this)">
+              <svg data-feather="eye" width="16" height="16"></svg>
+            </span>
+          </div>
+          <div class="form-error" id="matchError" style="display:none;">
+            <svg data-feather="x-circle" width="12" height="12"></svg>
+            Passwords do not match
+          </div>
+          <div style="font-size:12px;color:var(--income);margin-top:5px;display:none;" id="matchOk">
+            ✓ Passwords match
+          </div>
+        </div>
+
+        <!-- Monthly income (optional) -->
+        <div class="form-group">
+          <label class="form-label">Monthly Income (Optional)</label>
+          <div class="input-wrap">
+            <span class="icon-left" style="font-weight:700;font-size:14px;color:var(--text-3);">₹</span>
+            <input type="number" name="monthlyIncome" class="form-control" placeholder="e.g. 50000" min="0" max="999999999" step="any" />
+          </div>
+        </div>
+
+        <!-- Terms checkbox -->
+        <label class="form-check">
+          <input type="checkbox" name="terms" id="termsCheck" required />
+          <span>I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a></span>
+        </label>
+
+        <!-- Submit -->
+        <button type="submit" class="btn btn-primary btn-full" id="registerBtn">
+          <svg data-feather="user-plus" width="16" height="16"></svg>
+          Create Account
+        </button>
+
+      </form>
+
+      <p class="auth-switch">
+        Already have an account? <a href="/auth/login">Sign in →</a>
+      </p>
+
+    </div>
+  </div>
+
+</div>
+
+
+<script>
+  feather.replace();
+
+  // ── Toggle password visibility
+  function togglePass(inputId, iconEl) {
+    const input = document.getElementById(inputId);
+    input.type = input.type === 'password' ? 'text' : 'password';
+    iconEl.innerHTML = input.type === 'text'
+      ? '<svg data-feather="eye-off" width="16" height="16"></svg>'
+      : '<svg data-feather="eye" width="16" height="16"></svg>';
+    feather.replace();
+  }
+
+  // ── Password strength checker
+  function checkStrength(val) {
+    let score = 0;
+    if (val.length >= 8)              score++; // length
+    if (/[A-Z]/.test(val))            score++; // uppercase
+    if (/[0-9]/.test(val))            score++; // number
+    if (/[^A-Za-z0-9]/.test(val))     score++; // special char
+
+    const colors = ['#ff5c7a', '#f59e0b', '#4f8dff', '#00c896'];
+    const labels = ['Weak', 'Fair', 'Good', 'Strong'];
+
+    for (let i = 1; i <= 4; i++) {
+      const bar = document.getElementById('sb' + i);
+      bar.style.background = i <= score ? colors[score - 1] : 'var(--border)';
+    }
+
+    const label = document.getElementById('strengthLabel');
+    label.textContent = score > 0 ? labels[score - 1] : '';
+    label.style.color = score > 0 ? colors[score - 1] : 'var(--text-3)';
+  }
+
+  // ── Confirm password match
+  function checkMatch() {
+    const pw  = document.getElementById('regPassword').value;
+    const cpw = document.getElementById('confirmPassword').value;
+    const err = document.getElementById('matchError');
+    const ok  = document.getElementById('matchOk');
+
+    if (!cpw) { err.style.display = 'none'; ok.style.display = 'none'; return; }
+
+    if (pw === cpw) {
+      err.style.display = 'none';
+      ok.style.display  = 'block';
+    } else {
+      err.style.display = 'flex';
+      ok.style.display  = 'none';
+      feather.replace();
+    }
+  }
+
+  // ── Block submit if passwords don't match
+  document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const pw  = document.getElementById('regPassword').value;
+    const cpw = document.getElementById('confirmPassword').value;
+    if (pw !== cpw) {
+      e.preventDefault();
+      document.getElementById('matchError').style.display = 'flex';
+      feather.replace();
+      return;
+    }
+    const btn = document.getElementById('registerBtn');
+    btn.innerHTML = '<span class="spinner"></span> Creating...';
+    btn.disabled  = true;
+  });
+</script>
+
+</body>
+</html>

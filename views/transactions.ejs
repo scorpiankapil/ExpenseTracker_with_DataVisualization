@@ -1,0 +1,422 @@
+<%- include('partials/header', { title: 'Transactions - ExpenseIQ' }) %>
+
+<!--
+  TRANSACTIONS PAGE
+  ─────────────────
+  Features:
+  - 3 summary cards
+  - Filter chips (All, Income, Expense, by category)
+  - Sort dropdown
+  - Live search
+  - Full table with Edit / Delete
+  - Add Transaction modal
+  
+  EJS Variables:
+  - user:         { name, email }
+  - summary:      { income, expense }
+  - transactions: array
+-->
+
+<div class="app-layout">
+  <%- include('partials/sidebar', { page: 'transactions', user: user }) %>
+
+  <div class="main-content">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title">Transactions</span>
+        <span class="topbar-date">All your income & expense records</span>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-search">
+          <svg data-feather="search" width="14" height="14"></svg>
+          <input type="text" id="searchInput" placeholder="Search by title..." oninput="liveSearch(this.value)" />
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="exportData()" title="Export CSV">
+          <svg data-feather="download" width="14" height="14"></svg>
+          Export
+        </button>
+        <button class="btn btn-primary btn-sm" onclick="openModal()">
+          <svg data-feather="plus" width="14" height="14"></svg>
+          Add Transaction
+        </button>
+      </div>
+    </div>
+
+
+    <div class="page-body">
+
+      <!-- SUMMARY CARDS (3 columns) -->
+      <div class="cards-grid mb-24" style="grid-template-columns:repeat(3,1fr);">
+        <div class="summary-card card-income">
+          <div class="card-top">
+            <span class="card-label">Total Income</span>
+            <div class="card-icon icon-income">
+              <svg data-feather="arrow-up-circle" width="18" height="18"></svg>
+            </div>
+          </div>
+          <div class="card-amount">₹<%= (summary.income||0).toLocaleString('en-IN') %></div>
+          <div class="card-trend">All time income</div>
+        </div>
+        <div class="summary-card card-expense">
+          <div class="card-top">
+            <span class="card-label">Total Expense</span>
+            <div class="card-icon icon-expense">
+              <svg data-feather="arrow-down-circle" width="18" height="18"></svg>
+            </div>
+          </div>
+          <div class="card-amount">₹<%= (summary.expense||0).toLocaleString('en-IN') %></div>
+          <div class="card-trend">All time expense</div>
+        </div>
+        <div class="summary-card card-balance">
+          <div class="card-top">
+            <span class="card-label">Net Balance</span>
+            <div class="card-icon icon-balance">
+              <svg data-feather="credit-card" width="18" height="18"></svg>
+            </div>
+          </div>
+          <div class="card-amount">₹<%= ((summary.income||0)-(summary.expense||0)).toLocaleString('en-IN') %></div>
+          <div class="card-trend">Income − Expense</div>
+        </div>
+      </div>
+
+
+      <!-- FILTER CHIPS + SORT -->
+      <div class="filter-bar mb-20">
+        <!-- Type / category filter chips -->
+        <button class="filter-chip active" onclick="setFilter('all', this)">All</button>
+        <button class="filter-chip" onclick="setFilter('income', this)">↑ Income</button>
+        <button class="filter-chip" onclick="setFilter('expense', this)">↓ Expense</button>
+        <button class="filter-chip" onclick="setFilter('Food', this)">🍛 Food</button>
+        <button class="filter-chip" onclick="setFilter('Travel', this)">🚗 Travel</button>
+        <button class="filter-chip" onclick="setFilter('Rent', this)">🏠 Rent</button>
+        <button class="filter-chip" onclick="setFilter('Shopping', this)">🛒 Shopping</button>
+        <button class="filter-chip" onclick="setFilter('Health', this)">💊 Health</button>
+
+        <!-- Sort (pushed to right) -->
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+          <span style="font-size:12px;color:var(--text-2);">Sort by:</span>
+          <select class="filter-control" onchange="sortTable(this.value)" style="min-width:130px;">
+            <option value="date-desc">Newest First</option>
+            <option value="date-asc">Oldest First</option>
+            <option value="amount-desc">Highest Amount</option>
+            <option value="amount-asc">Lowest Amount</option>
+          </select>
+        </div>
+      </div>
+
+
+      <!-- TRANSACTIONS TABLE -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">All Transactions</div>
+          <span id="rowCount" class="text-small text-muted">
+            <%= transactions ? transactions.length : 0 %> records
+          </span>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Transaction</th>
+                <th>Category</th>
+                <th>Date</th>
+                <th>Type</th>
+                <th class="text-right">Amount</th>
+                <th class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="txTableBody">
+
+              <% if (transactions && transactions.length > 0) { %>
+                <% transactions.forEach(function(tx, i) { %>
+                  <!--
+                    data-* attributes are used by JS for filtering and sorting
+                    without making any server requests
+                  -->
+                  <tr
+                    data-type="<%= tx.type %>"
+                    data-category="<%= tx.category %>"
+                    data-title="<%= tx.title.toLowerCase() %>"
+                    data-amount="<%= tx.amount %>"
+                    data-date="<%= new Date(tx.date).getTime() %>"
+                  >
+                    <!-- Row number -->
+                    <td style="color:var(--text-3);font-size:13px;"><%= i + 1 %></td>
+
+                    <!-- Transaction name + note -->
+                    <td>
+                      <div class="tx-item">
+                        <div class="tx-icon" style="background:<%=
+                          tx.category==='Food'     ? 'rgba(245,158,11,0.12)'  :
+                          tx.category==='Travel'   ? 'rgba(79,141,255,0.12)'  :
+                          tx.category==='Health'   ? 'rgba(0,200,150,0.12)'   :
+                          tx.category==='Shopping' ? 'rgba(167,139,250,0.12)' :
+                          tx.category==='Rent'     ? 'rgba(255,77,109,0.12)'  :
+                          'rgba(122,144,181,0.12)'
+                        %>">
+                          <%=
+                            tx.category==='Food'     ? '🍛' :
+                            tx.category==='Travel'   ? '🚗' :
+                            tx.category==='Health'   ? '💊' :
+                            tx.category==='Shopping' ? '🛒' :
+                            tx.category==='Rent'     ? '🏠' :
+                            tx.category==='Salary'   ? '💰' : '📝'
+                          %>
+                        </div>
+                        <div>
+                          <div class="tx-name"><%= tx.title %></div>
+                          <% if (tx.notes) { %>
+                            <div class="tx-note"><%= tx.notes %></div>
+                          <% } %>
+                        </div>
+                      </div>
+                    </td>
+
+                    <!-- Category badge -->
+                    <td>
+                      <span class="badge badge-<%= (tx.category||'other').toLowerCase() %>">
+                        <%= tx.category || 'Other' %>
+                      </span>
+                    </td>
+
+                    <!-- Date -->
+                    <td style="font-size:13px;color:var(--text-2);">
+                      <%= new Date(tx.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) %>
+                    </td>
+
+                    <!-- Type -->
+                    <td>
+                      <span class="badge <%= tx.type==='income' ? 'badge-income' : 'badge-expense' %>">
+                        <%= tx.type==='income' ? '↑ Income' : '↓ Expense' %>
+                      </span>
+                    </td>
+
+                    <!-- Amount -->
+                    <td class="text-right">
+                      <span class="<%= tx.type==='income' ? 'amount-in' : 'amount-out' %>">
+                        <%= tx.type==='income' ? '+' : '-' %>₹<%= tx.amount.toLocaleString('en-IN') %>
+                      </span>
+                    </td>
+
+                    <!-- Edit / Delete -->
+                    <td class="text-center">
+                      <div class="row-actions">
+                        <button class="action-btn" title="Edit"
+                                onclick="editRow('<%= tx._id %>')">
+                          <svg data-feather="edit-2" width="13" height="13"></svg>
+                        </button>
+                        <button class="action-btn del" title="Delete"
+                                onclick="deleteRow('<%= tx._id %>', this)">
+                          <svg data-feather="trash-2" width="13" height="13"></svg>
+                        </button>
+                      </div>
+                    </td>
+
+                  </tr>
+                <% }); %>
+              <% } else { %>
+                <tr>
+                  <td colspan="7">
+                    <div class="empty-state">
+                      <div class="empty-icon">💸</div>
+                      <h3>No transactions found</h3>
+                      <p>Add your first transaction above</p>
+                    </div>
+                  </td>
+                </tr>
+              <% } %>
+
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination (shown only if more than 10 rows) -->
+        <% if (transactions && transactions.length > 10) { %>
+          <div class="pagination">
+            <span class="pagination-info">
+              Showing 1–10 of <%= transactions.length %>
+            </span>
+            <div class="pagination-btns">
+              <div class="page-btn">‹</div>
+              <div class="page-btn active">1</div>
+              <div class="page-btn">2</div>
+              <div class="page-btn">›</div>
+            </div>
+          </div>
+        <% } %>
+      </div>
+
+    </div><!-- /page-body -->
+  </div>
+</div>
+
+
+<!-- ADD TRANSACTION MODAL (same as dashboard) -->
+<div class="modal-backdrop" id="modalBackdrop" onclick="closeModalOutside(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 class="modal-title" id="modalTitle">Add Transaction</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <div class="type-toggle">
+      <button class="type-btn active-expense" id="expBtn" onclick="setType('expense')">↓ Expense</button>
+      <button class="type-btn" id="incBtn" onclick="setType('income')">↑ Income</button>
+    </div>
+
+    <form action="/transactions/add" method="POST" id="txForm">
+      <input type="hidden" name="type"  id="txTypeInput" value="expense" />
+      <input type="hidden" name="_id"   id="txIdInput"   value="" />
+
+      <div class="form-group">
+        <label class="form-label">Title</label>
+        <input type="text" name="title" id="txTitleInput" class="form-control" placeholder="e.g. Monthly rent" required />
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Amount (₹)</label>
+          <input type="number" name="amount" id="txAmountInput" class="form-control" placeholder="0" min="1" max="999999999" step="any" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Date</label>
+          <input type="date" name="date" id="txDateInput" class="form-control" required />
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select name="category" id="txCategoryInput" class="form-select" required>
+          <option value="">— Select —</option>
+          <optgroup label="Expenses">
+            <option value="Food">🍛 Food</option>
+            <option value="Travel">🚗 Travel</option>
+            <option value="Health">💊 Health</option>
+            <option value="Shopping">🛒 Shopping</option>
+            <option value="Rent">🏠 Rent</option>
+            <option value="Entertainment">🎬 Entertainment</option>
+            <option value="Education">📚 Education</option>
+            <option value="Utilities">⚡ Utilities</option>
+          </optgroup>
+          <optgroup label="Income">
+            <option value="Salary">💰 Salary</option>
+            <option value="Freelance">💻 Freelance</option>
+            <option value="Investment">📈 Investment</option>
+          </optgroup>
+          <option value="Other">📝 Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes (Optional)</label>
+        <textarea name="notes" id="txNotesInput" class="form-control" placeholder="Extra details..."></textarea>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <svg data-feather="check" width="15" height="15"></svg>
+          Save
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/js/main.js"></script>
+<script>
+  feather.replace();
+  document.getElementById('txDateInput').value = new Date().toISOString().split('T')[0];
+
+  // ── Active filter tracker
+  let activeFilter = 'all';
+
+  // ── Filter chips
+  function setFilter(filter, btn) {
+    activeFilter = filter;
+    document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    applyFilters();
+  }
+
+  // ── Live search
+  function liveSearch(q) { applyFilters(q); }
+
+  // ── Apply both filter + search together
+  function applyFilters(searchQuery) {
+    const q    = searchQuery !== undefined ? searchQuery : document.getElementById('searchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#txTableBody tr[data-type]');
+    let count  = 0;
+
+    rows.forEach(row => {
+      const matchFilter =
+        activeFilter === 'all' ||
+        row.dataset.type     === activeFilter ||
+        row.dataset.category === activeFilter;
+
+      const matchSearch = !q || row.dataset.title.includes(q);
+
+      if (matchFilter && matchSearch) {
+        row.style.display = '';
+        count++;
+      } else {
+        row.style.display = 'none';
+      }
+    });
+
+    document.getElementById('rowCount').textContent = count + ' records';
+  }
+
+  // ── Sort rows
+  function sortTable(val) {
+    const [field, dir] = val.split('-');
+    const tbody = document.getElementById('txTableBody');
+    const rows  = Array.from(tbody.querySelectorAll('tr[data-type]'));
+
+    rows.sort((a, b) => {
+      const va = field === 'amount' ? +a.dataset.amount : +a.dataset.date;
+      const vb = field === 'amount' ? +b.dataset.amount : +b.dataset.date;
+      return dir === 'asc' ? va - vb : vb - va;
+    });
+
+    rows.forEach(r => tbody.appendChild(r));
+  }
+
+  // ── Edit (pre-fill modal)
+  function editRow(id) {
+    document.getElementById('modalTitle').textContent = 'Edit Transaction';
+    document.getElementById('txForm').action = '/transactions/edit/' + id;
+    openModal();
+  }
+
+  // ── Delete row
+  async function deleteRow(id, btn) {
+    if (!confirm('Delete this transaction?')) return;
+    try {
+      const res = await fetch('/transactions/delete/' + id, { method: 'DELETE' });
+      if (res.ok) {
+        const row = btn.closest('tr');
+        row.style.opacity    = '0';
+        row.style.transition = 'opacity 0.3s ease';
+        setTimeout(() => row.remove(), 300);
+        showToast('Transaction deleted!', 'success');
+      }
+    } catch(e) {
+      showToast('Error deleting transaction', 'error');
+    }
+  }
+
+  // ── Export
+  function exportData() {
+    window.location.href = '/reports/export?format=csv';
+  }
+</script>
+
+</body>
+</html>

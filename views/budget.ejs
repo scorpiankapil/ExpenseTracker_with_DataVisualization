@@ -1,0 +1,330 @@
+<%- include('partials/header', { title: 'Budget - ExpenseIQ' }) %>
+
+<!--
+  BUDGET PAGE
+  ───────────
+  Sections:
+  1. Overall budget progress
+  2. Per-category budget cards
+  3. Budget vs Spent bar chart
+  4. Budget tips
+  5. Set Budget modal
+  
+  EJS Variables:
+  - user:          { name, email }
+  - budgets:       array | null
+  - budgetSummary: { spent, total }
+-->
+
+<div class="app-layout">
+  <%- include('partials/sidebar', { page: 'budget', user: user }) %>
+
+  <div class="main-content">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title">Budget Planner</span>
+        <span class="topbar-date">Set limits. Stay on track.</span>
+      </div>
+      <div class="topbar-right">
+        <select class="month-select">
+          <option>March 2025</option>
+          <option>April 2025</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="openBudgetModal()">
+          <svg data-feather="plus" width="14" height="14"></svg>
+          Set Budget
+        </button>
+      </div>
+    </div>
+
+
+    <div class="page-body">
+
+      <!-- 1. OVERALL BUDGET STATUS -->
+      <div class="overall-budget mb-24">
+        <div class="flex-between" style="margin-bottom:12px;">
+          <div>
+            <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;">Overall Budget — March 2025</h3>
+            <span style="font-size:13px;color:var(--text-2);">
+              Total spent: <strong style="color:var(--balance);">
+                ₹<%= budgetSummary ? budgetSummary.spent.toLocaleString('en-IN') : '28,000' %>
+              </strong>
+              &nbsp;out of&nbsp;
+              <strong>₹<%= budgetSummary ? budgetSummary.total.toLocaleString('en-IN') : '40,000' %></strong>
+            </span>
+          </div>
+          <div style="text-align:right;">
+            <%
+              const totalPct = budgetSummary
+                ? Math.round((budgetSummary.spent / budgetSummary.total) * 100)
+                : 70;
+            %>
+            <span style="font-family:'Plus Jakarta Sans',sans-serif;font-size:26px;font-weight:800;color:var(--balance);">
+              <%= totalPct %>%
+            </span>
+            <div style="font-size:12px;color:var(--text-2);">of budget used</div>
+          </div>
+        </div>
+
+        <div class="progress-bar-wrap" style="height:10px;">
+          <div class="progress-bar <%= totalPct > 85 ? 'bar-exceeded' : totalPct > 65 ? 'bar-warning' : 'bar-safe' %>"
+               style="width:<%= totalPct %>%;">
+          </div>
+        </div>
+
+        <div class="flex-between mt-16" style="flex-wrap:wrap;gap:12px;">
+          <div style="display:flex;gap:20px;">
+            <span style="font-size:13px;color:var(--text-2);">
+              <span style="color:var(--expense);">●</span>&nbsp;Spent: ₹28,000
+            </span>
+            <span style="font-size:13px;color:var(--text-2);">
+              <span style="color:var(--income);">●</span>&nbsp;Remaining: ₹12,000
+            </span>
+          </div>
+          <span style="font-size:13px;color:var(--text-2);">14 days left this month</span>
+        </div>
+      </div>
+
+
+      <!-- 2. PER-CATEGORY BUDGET CARDS -->
+      <%
+        // Sample data — in real app this comes from MongoDB
+        const budgetCards = budgets || [
+          { cat:'Food',         icon:'🍛', color:'#f59e0b', spent:8960,  limit:10000, status:'warning'  },
+          { cat:'Rent',         icon:'🏠', color:'#ff5c7a', spent:7840,  limit:8000,  status:'warning'  },
+          { cat:'Travel',       icon:'🚗', color:'#4f8dff', spent:2100,  limit:5000,  status:'safe'     },
+          { cat:'Shopping',     icon:'🛒', color:'#a78bfa', spent:4200,  limit:3000,  status:'exceeded' },
+          { cat:'Health',       icon:'💊', color:'#00c896', spent:900,   limit:2000,  status:'safe'     },
+          { cat:'Entertainment',icon:'🎬', color:'#ff9500', spent:1200,  limit:2000,  status:'safe'     },
+        ];
+      %>
+
+      <div class="budget-grid mb-24">
+        <% budgetCards.forEach(function(b) {
+          const pct = Math.min(Math.round((b.spent / b.limit) * 100), 100);
+        %>
+          <div class="budget-card">
+
+            <!-- Card top: icon + name + status -->
+            <div class="budget-card-top">
+              <div class="budget-cat-info">
+                <div class="budget-cat-icon" style="background:<%= b.color %>22;">
+                  <%= b.icon %>
+                </div>
+                <span class="budget-cat-name"><%= b.cat %></span>
+              </div>
+              <span class="badge <%= b.status==='safe' ? 'status-safe' : b.status==='warning' ? 'status-warning' : 'status-exceeded' %>">
+                <%= b.status==='safe' ? '✓ On Track' : b.status==='warning' ? '⚠ Warning' : '✗ Exceeded' %>
+              </span>
+            </div>
+
+            <!-- Amounts -->
+            <div class="budget-amounts">
+              <span class="budget-spent" style="color:<%= b.color %>;">
+                ₹<%= b.spent.toLocaleString('en-IN') %>
+              </span>
+              <span class="budget-limit">
+                of ₹<%= b.limit.toLocaleString('en-IN') %>
+              </span>
+            </div>
+
+            <!-- Progress bar -->
+            <div class="progress-bar-wrap">
+              <div class="progress-bar bar-<%= b.status %>"
+                   style="width:<%= pct %>%;">
+              </div>
+            </div>
+
+            <!-- Footer stats -->
+            <div class="budget-footer">
+              <span><%= pct %>% used</span>
+              <span class="<%= b.status==='exceeded' ? 'over' : 'left' %>">
+                <% if (b.status === 'exceeded') { %>
+                  ₹<%= (b.spent - b.limit).toLocaleString('en-IN') %> over budget
+                <% } else { %>
+                  ₹<%= (b.limit - b.spent).toLocaleString('en-IN') %> remaining
+                <% } %>
+              </span>
+            </div>
+
+            <!-- Card actions -->
+            <div style="display:flex;gap:8px;margin-top:14px;">
+              <button class="btn btn-outline btn-sm btn-full"
+                      onclick="openEditBudget('<%= b.cat %>', <%= b.limit %>)">
+                Edit Limit
+              </button>
+              <button class="btn btn-danger btn-sm"
+                      onclick="deleteBudget('<%= b.cat %>')">
+                <svg data-feather="trash-2" width="13" height="13"></svg>
+              </button>
+            </div>
+
+          </div>
+        <% }); %>
+      </div>
+
+
+      <!-- 3. BUDGET CHART + TIPS -->
+      <div class="charts-row-equal">
+
+        <!-- Bar chart: Spent vs Limit -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Spent vs Budget Limit</div>
+              <div class="card-subtitle">Per category comparison</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="budgetChart" height="240"></canvas>
+          </div>
+        </div>
+
+        <!-- Budget tips -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">💡 Smart Tips</div>
+          </div>
+          <div style="padding:18px;display:flex;flex-direction:column;gap:12px;">
+            <%
+              const tips = [
+                { icon:'⚠️', msg:'Shopping exceeded budget by ₹1,200 — consider reducing non-essential buys.' },
+                { icon:'✅', msg:'Travel is well within budget this month. Great job!' },
+                { icon:'💡', msg:'You saved ₹1,040 on Food — move it to savings account.' },
+                { icon:'📊', msg:'70% budget used with 14 days left. Pace yourself on daily spending.' },
+              ];
+            %>
+            <% tips.forEach(function(tip) { %>
+              <div style="display:flex;gap:12px;padding:14px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--r-md);">
+                <span style="font-size:18px;flex-shrink:0;"><%= tip.icon %></span>
+                <span style="font-size:13px;color:var(--text-2);line-height:1.55;"><%= tip.msg %></span>
+              </div>
+            <% }); %>
+          </div>
+        </div>
+
+      </div>
+
+    </div><!-- /page-body -->
+  </div>
+</div>
+
+
+<!-- SET BUDGET MODAL -->
+<div class="modal-backdrop" id="budgetModal" onclick="closeBudgetModalOutside(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 class="modal-title" id="budgetModalTitle">Set Budget</h3>
+      <button class="modal-close" onclick="closeBudgetModal()">✕</button>
+    </div>
+
+    <form action="/budget/set" method="POST">
+      <div class="form-group">
+        <label class="form-label">Category</label>
+        <select name="category" id="budgetCatSelect" class="form-select" required>
+          <option value="">— Select Category —</option>
+          <option value="Food">🍛 Food & Dining</option>
+          <option value="Travel">🚗 Travel</option>
+          <option value="Rent">🏠 Rent & Housing</option>
+          <option value="Shopping">🛒 Shopping</option>
+          <option value="Health">💊 Health</option>
+          <option value="Entertainment">🎬 Entertainment</option>
+          <option value="Education">📚 Education</option>
+          <option value="Utilities">⚡ Utilities</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Monthly Limit (₹)</label>
+        <input type="number" name="limit" id="budgetLimitInput" class="form-control" placeholder="e.g. 5000" min="1" max="999999999" step="any" required />
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Month</label>
+        <input type="month" name="month" class="form-control"
+               value="<%= new Date().toISOString().slice(0,7) %>" required />
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="closeBudgetModal()">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <svg data-feather="check" width="15" height="15"></svg>
+          Save Budget
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/js/main.js"></script>
+<script>
+  feather.replace();
+
+  // ── Budget bar chart
+  new Chart(document.getElementById('budgetChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Food','Rent','Travel','Shopping','Health','Entertainment'],
+      datasets: [
+        {
+          label: 'Spent (₹)',
+          data: [8960, 7840, 2100, 4200, 900, 1200],
+          backgroundColor: 'rgba(0,200,150,0.7)',
+          borderRadius: 6,
+        },
+        {
+          label: 'Budget Limit (₹)',
+          data: [10000, 8000, 5000, 3000, 2000, 2000],
+          backgroundColor: 'rgba(255,255,255,0.07)',
+          borderRadius: 6,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color:'#7a90b5', font:{ family:'DM Sans',size:12 } } }
+      },
+      scales: {
+        x: { ticks:{color:'#7a90b5'}, grid:{color:'#1a2840'} },
+        y: {
+          ticks:{
+            color:'#7a90b5',
+            callback: v => '₹' + v.toLocaleString('en-IN')
+          },
+          grid:{color:'#1a2840'}
+        }
+      }
+    }
+  });
+
+  // ── Budget modal helpers
+  function openBudgetModal() {
+    document.getElementById('budgetModal').classList.add('open');
+    feather.replace();
+  }
+  function closeBudgetModal() {
+    document.getElementById('budgetModal').classList.remove('open');
+  }
+  function closeBudgetModalOutside(e) {
+    if (e.target.id === 'budgetModal') closeBudgetModal();
+  }
+  function openEditBudget(category, limit) {
+    document.getElementById('budgetModalTitle').textContent = 'Edit Budget — ' + category;
+    document.getElementById('budgetCatSelect').value  = category;
+    document.getElementById('budgetLimitInput').value = limit;
+    openBudgetModal();
+  }
+  function deleteBudget(category) {
+    if (confirm('Remove budget for ' + category + '?')) {
+      showToast('Budget removed for ' + category, 'success');
+    }
+  }
+</script>
+
+</body>
+</html>

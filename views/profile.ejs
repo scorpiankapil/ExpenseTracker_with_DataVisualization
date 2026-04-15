@@ -1,0 +1,309 @@
+<%- include('partials/header', { title: 'Profile - ExpenseIQ' }) %>
+
+<div class="app-layout">
+  <%- include('partials/sidebar', { page: 'profile', user: user }) %>
+
+  <div class="main-content">
+
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title">My Profile</span>
+        <span class="topbar-date">Manage your personal information</span>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <% if (typeof success !== 'undefined' && success) { %>
+        <div class="alert alert-success" style="margin-bottom:20px;">
+          <svg data-feather="check-circle" width="16" height="16"></svg>
+          <%= success %>
+        </div>
+      <% } %>
+
+      <% if (typeof error !== 'undefined' && error) { %>
+        <div class="alert alert-error" style="margin-bottom:20px;">
+          <svg data-feather="alert-circle" width="16" height="16"></svg>
+          <%= error %>
+        </div>
+      <% } %>
+
+      <div class="grid-2" style="gap:24px;align-items:start;">
+
+        <!-- LEFT: Avatar + Basic Info -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+
+          <!-- Avatar Card -->
+          <div class="card">
+            <div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:16px;padding:32px;">
+              <div style="
+                width:90px;height:90px;border-radius:50%;
+                background:linear-gradient(135deg,var(--savings),var(--purple));
+                display:flex;align-items:center;justify-content:center;
+                font-family:'Plus Jakarta Sans',sans-serif;font-size:36px;font-weight:800;color:#fff;
+                box-shadow:0 0 24px rgba(79,141,255,0.3);">
+                <%= user && user.name ? user.name.charAt(0).toUpperCase() : 'U' %>
+              </div>
+              <div style="text-align:center;">
+                <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:700;">
+                  <%= user ? user.name : 'User' %>
+                </div>
+                <div style="font-size:13px;color:var(--text-2);margin-top:4px;">
+                  <%= user ? user.email : '' %>
+                </div>
+                <div style="margin-top:10px;">
+                  <span class="badge badge-income">Active Account</span>
+                </div>
+              </div>
+              <div style="width:100%;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-around;">
+                <div style="text-align:center;">
+                  <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800;color:var(--accent);">
+                    <%= txCount || 0 %>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-2);text-transform:uppercase;letter-spacing:1px;">Transactions</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800;color:var(--balance);">
+                    <%= budgetCount || 0 %>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-2);text-transform:uppercase;letter-spacing:1px;">Budgets</div>
+                </div>
+                <div style="text-align:center;">
+                  <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;font-weight:800;color:var(--savings);">
+                    <%= memberDays || 1 %>
+                  </div>
+                  <div style="font-size:11px;color:var(--text-2);text-transform:uppercase;letter-spacing:1px;">Days Active</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Monthly Income Card -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Monthly Income</div>
+              <svg data-feather="trending-up" width="16" height="16" style="color:var(--income);"></svg>
+            </div>
+            <div class="card-body">
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:28px;font-weight:800;color:var(--income);margin-bottom:6px;">
+                ₹<%= user && user.monthlyIncome ? user.monthlyIncome.toLocaleString('en-IN') : '0' %>
+              </div>
+              <div style="font-size:13px;color:var(--text-2);">Your declared monthly income</div>
+              <button class="btn btn-outline btn-sm" style="margin-top:14px;width:100%;" onclick="document.getElementById('incomeModal').classList.add('open');feather.replace();">
+                <svg data-feather="edit-2" width="13" height="13"></svg>
+                Update Income
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- RIGHT: Edit Forms -->
+        <div style="display:flex;flex-direction:column;gap:20px;">
+
+          <!-- Edit Profile Form -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Edit Profile</div>
+              <svg data-feather="user" width="16" height="16" style="color:var(--text-2);"></svg>
+            </div>
+            <div class="card-body">
+              <form action="/profile/update" method="POST" id="profileForm">
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label">First Name</label>
+                    <div class="input-wrap">
+                      <svg class="icon-left" data-feather="user" width="16" height="16"></svg>
+                      <input type="text" name="firstName" class="form-control"
+                        value="<%= user && user.name ? user.name.split(' ')[0] : '' %>"
+                        placeholder="First Name" required />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label">Last Name</label>
+                    <div class="input-wrap">
+                      <svg class="icon-left" data-feather="user" width="16" height="16"></svg>
+                      <input type="text" name="lastName" class="form-control"
+                        value="<%= user && user.name ? user.name.split(' ').slice(1).join(' ') : '' %>"
+                        placeholder="Last Name" />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Email Address</label>
+                  <div class="input-wrap">
+                    <svg class="icon-left" data-feather="mail" width="16" height="16"></svg>
+                    <input type="email" name="email" class="form-control"
+                      value="<%= user ? user.email : '' %>"
+                      placeholder="you@example.com" required />
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">
+                  <svg data-feather="save" width="15" height="15"></svg>
+                  Save Changes
+                </button>
+
+              </form>
+            </div>
+          </div>
+
+          <!-- Change Password Form -->
+          <div class="card">
+            <div class="card-header">
+              <div class="card-title">Change Password</div>
+              <svg data-feather="lock" width="16" height="16" style="color:var(--text-2);"></svg>
+            </div>
+            <div class="card-body">
+              <form action="/profile/change-password" method="POST" id="passwordForm">
+
+                <div class="form-group">
+                  <label class="form-label">Current Password</label>
+                  <div class="input-wrap icon-right-only" style="position:relative;">
+                    <input type="password" name="currentPassword" id="currentPwd" class="form-control" placeholder="Enter current password" required />
+                    <span class="icon-right" onclick="togglePass('currentPwd',this)">
+                      <svg data-feather="eye" width="16" height="16"></svg>
+                    </span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">New Password</label>
+                  <div class="input-wrap icon-right-only" style="position:relative;">
+                    <input type="password" name="newPassword" id="newPwd" class="form-control" placeholder="Min. 8 characters" required minlength="8" oninput="checkStrength(this.value)" />
+                    <span class="icon-right" onclick="togglePass('newPwd',this)">
+                      <svg data-feather="eye" width="16" height="16"></svg>
+                    </span>
+                  </div>
+                  <div class="strength-meter">
+                    <div class="strength-bars">
+                      <div class="strength-bar" id="sb1"></div>
+                      <div class="strength-bar" id="sb2"></div>
+                      <div class="strength-bar" id="sb3"></div>
+                      <div class="strength-bar" id="sb4"></div>
+                    </div>
+                    <span class="strength-label" id="strengthLabel"></span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label">Confirm New Password</label>
+                  <div class="input-wrap icon-right-only" style="position:relative;">
+                    <input type="password" name="confirmPassword" id="confirmPwd" class="form-control" placeholder="Repeat new password" required oninput="checkMatch()" />
+                    <span class="icon-right" onclick="togglePass('confirmPwd',this)">
+                      <svg data-feather="eye" width="16" height="16"></svg>
+                    </span>
+                  </div>
+                  <div class="form-error" id="matchError" style="display:none;">
+                    <svg data-feather="x-circle" width="12" height="12"></svg>
+                    Passwords do not match
+                  </div>
+                  <div style="font-size:12px;color:var(--income);margin-top:5px;display:none;" id="matchOk">
+                    ✓ Passwords match
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full">
+                  <svg data-feather="lock" width="15" height="15"></svg>
+                  Update Password
+                </button>
+
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Update Income Modal -->
+<div class="modal-backdrop" id="incomeModal" onclick="closeIncomeModal(event)">
+  <div class="modal-box">
+    <div class="modal-header">
+      <h3 class="modal-title">Update Monthly Income</h3>
+      <button class="modal-close" onclick="document.getElementById('incomeModal').classList.remove('open')">✕</button>
+    </div>
+    <form action="/profile/update-income" method="POST">
+      <div class="form-group">
+        <label class="form-label">Monthly Income (₹)</label>
+        <div class="input-wrap">
+          <span class="icon-left" style="font-weight:700;font-size:14px;color:var(--text-3);">₹</span>
+          <input type="number" name="monthlyIncome" class="form-control"
+            value="<%= user && user.monthlyIncome ? user.monthlyIncome : '' %>"
+            placeholder="e.g. 50000" min="0" max="999999999" step="any" required />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-outline" onclick="document.getElementById('incomeModal').classList.remove('open')">Cancel</button>
+        <button type="submit" class="btn btn-primary">
+          <svg data-feather="check" width="15" height="15"></svg>
+          Save
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/js/main.js"></script>
+<script>
+  feather.replace();
+
+  function togglePass(inputId, iconEl) {
+    const input = document.getElementById(inputId);
+    input.type  = input.type === 'password' ? 'text' : 'password';
+    iconEl.innerHTML = input.type === 'text'
+      ? '<svg data-feather="eye-off" width="16" height="16"></svg>'
+      : '<svg data-feather="eye" width="16" height="16"></svg>';
+    feather.replace();
+  }
+
+  function checkStrength(val) {
+    let score = 0;
+    if (val.length >= 8)           score++;
+    if (/[A-Z]/.test(val))         score++;
+    if (/[0-9]/.test(val))         score++;
+    if (/[^A-Za-z0-9]/.test(val))  score++;
+    const colors = ['#ff5c7a','#f59e0b','#4f8dff','#00c896'];
+    const labels = ['Weak','Fair','Good','Strong'];
+    for (let i = 1; i <= 4; i++) {
+      document.getElementById('sb'+i).style.background = i <= score ? colors[score-1] : 'var(--border)';
+    }
+    const lbl = document.getElementById('strengthLabel');
+    lbl.textContent = score > 0 ? labels[score-1] : '';
+    lbl.style.color  = score > 0 ? colors[score-1] : 'var(--text-3)';
+  }
+
+  function checkMatch() {
+    const pw  = document.getElementById('newPwd').value;
+    const cpw = document.getElementById('confirmPwd').value;
+    const err = document.getElementById('matchError');
+    const ok  = document.getElementById('matchOk');
+    if (!cpw) { err.style.display='none'; ok.style.display='none'; return; }
+    if (pw === cpw) { err.style.display='none'; ok.style.display='block'; }
+    else            { err.style.display='flex';  ok.style.display='none'; feather.replace(); }
+  }
+
+  document.getElementById('passwordForm').addEventListener('submit', function(e) {
+    const pw  = document.getElementById('newPwd').value;
+    const cpw = document.getElementById('confirmPwd').value;
+    if (pw !== cpw) {
+      e.preventDefault();
+      document.getElementById('matchError').style.display = 'flex';
+      feather.replace();
+    }
+  });
+
+  function closeIncomeModal(e) {
+    if (e.target.id === 'incomeModal') document.getElementById('incomeModal').classList.remove('open');
+  }
+</script>
+
+</body>
+</html>

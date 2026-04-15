@@ -1,0 +1,223 @@
+<%- include('partials/header', { title: 'Settings - ExpenseIQ' }) %>
+
+<div class="app-layout">
+  <%- include('partials/sidebar', { page: 'settings', user: user }) %>
+
+  <div class="main-content">
+
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title">Settings</span>
+        <span class="topbar-date">Manage your account preferences</span>
+      </div>
+    </div>
+
+    <div class="page-body">
+
+      <div style="max-width:680px;display:flex;flex-direction:column;gap:20px;">
+
+        <!-- Account Info -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Account Information</div>
+            <svg data-feather="user" width="16" height="16" style="color:var(--text-2);"></svg>
+          </div>
+          <div class="card-body" style="display:flex;align-items:center;gap:16px;">
+            <div style="
+              width:54px;height:54px;border-radius:50%;
+              background:linear-gradient(135deg,var(--savings),var(--purple));
+              display:flex;align-items:center;justify-content:center;
+              font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:800;color:#fff;
+              flex-shrink:0;">
+              <%= user && user.name ? user.name.charAt(0).toUpperCase() : 'U' %>
+            </div>
+            <div style="flex:1;">
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:700;">
+                <%= user ? user.name : 'User' %>
+              </div>
+              <div style="font-size:13px;color:var(--text-2);margin-top:3px;">
+                <%= user ? user.email : '' %>
+              </div>
+            </div>
+            <a href="/profile" class="btn btn-outline btn-sm">
+              <svg data-feather="edit-2" width="13" height="13"></svg>
+              Edit Profile
+            </a>
+          </div>
+        </div>
+
+        <!-- Preferences -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Preferences</div>
+            <svg data-feather="sliders" width="16" height="16" style="color:var(--text-2);"></svg>
+          </div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:0;">
+
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);">
+              <div>
+                <div style="font-size:14px;font-weight:500;">Currency</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">Display currency for all amounts</div>
+              </div>
+              <select class="filter-control" style="min-width:100px;">
+                <option value="INR" selected>₹ INR</option>
+                <option value="USD">$ USD</option>
+                <option value="EUR">€ EUR</option>
+              </select>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border);">
+              <div>
+                <div style="font-size:14px;font-weight:500;">Date Format</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">How dates are displayed</div>
+              </div>
+              <select class="filter-control" style="min-width:130px;">
+                <option value="DD/MM/YYYY" selected>DD/MM/YYYY</option>
+                <option value="MM/DD/YYYY">MM/DD/YYYY</option>
+                <option value="YYYY-MM-DD">YYYY-MM-DD</option>
+              </select>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 0;">
+              <div>
+                <div style="font-size:14px;font-weight:500;">Budget Alerts</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">Get warned when 80% budget is used</div>
+              </div>
+              <label style="position:relative;width:40px;height:22px;cursor:pointer;">
+                <input type="checkbox" id="budgetAlertToggle" checked style="opacity:0;width:0;height:0;" onchange="toggleSetting(this,'Budget alerts')">
+                <span id="budgetAlertTrack" style="
+                  position:absolute;inset:0;border-radius:11px;
+                  background:var(--accent);transition:background 0.2s;">
+                </span>
+                <span id="budgetAlertThumb" style="
+                  position:absolute;top:3px;left:3px;width:16px;height:16px;
+                  border-radius:50%;background:#fff;transition:transform 0.2s;
+                  transform:translateX(18px);">
+                </span>
+              </label>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Security -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Security</div>
+            <svg data-feather="shield" width="16" height="16" style="color:var(--text-2);"></svg>
+          </div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">
+              <div>
+                <div style="font-size:14px;font-weight:500;">Password</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">Last changed — never</div>
+              </div>
+              <a href="/profile" class="btn btn-outline btn-sm">
+                <svg data-feather="lock" width="13" height="13"></svg>
+                Change Password
+              </a>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;">
+              <div>
+                <div style="font-size:14px;font-weight:500;">Active Sessions</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">You are logged in on this device</div>
+              </div>
+              <span class="badge badge-income">1 Active</span>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Data Management -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">Data Management</div>
+            <svg data-feather="database" width="16" height="16" style="color:var(--text-2);"></svg>
+          </div>
+          <div class="card-body" style="display:flex;flex-direction:column;gap:12px;">
+
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);">
+              <div>
+                <div style="font-size:14px;font-weight:500;">Export All Data</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">Download all your transactions as CSV</div>
+              </div>
+              <a href="/reports/export?format=csv" class="btn btn-outline btn-sm">
+                <svg data-feather="download" width="13" height="13"></svg>
+                Export CSV
+              </a>
+            </div>
+
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;">
+              <div>
+                <div style="font-size:14px;font-weight:500;color:var(--expense);">Delete Account</div>
+                <div style="font-size:12px;color:var(--text-2);margin-top:2px;">Permanently delete your account and all data</div>
+              </div>
+              <button class="btn btn-danger btn-sm" onclick="confirmDelete()">
+                <svg data-feather="trash-2" width="13" height="13"></svg>
+                Delete
+              </button>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Logout -->
+        <div class="card" style="border-color:rgba(255,77,109,0.2);">
+          <div class="card-body" style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:15px;font-weight:700;">Logout</div>
+              <div style="font-size:13px;color:var(--text-2);margin-top:3px;">
+                Sign out from your ExpenseIQ account
+              </div>
+            </div>
+            <a href="/auth/logout" class="btn btn-danger">
+              <svg data-feather="log-out" width="15" height="15"></svg>
+              Logout Now
+            </a>
+          </div>
+        </div>
+
+        <!-- App Info -->
+        <div style="text-align:center;padding:8px;color:var(--text-3);font-size:12px;">
+          ExpenseIQ v1.0.0 &nbsp;·&nbsp; B.Tech CSE Project &nbsp;·&nbsp; GLA University &nbsp;·&nbsp; 2025
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/js/main.js"></script>
+<script>
+  feather.replace();
+
+  function toggleSetting(checkbox, name) {
+    const track = document.getElementById('budgetAlertTrack');
+    const thumb = document.getElementById('budgetAlertThumb');
+    if (checkbox.checked) {
+      track.style.background = 'var(--accent)';
+      thumb.style.transform  = 'translateX(18px)';
+      showToast(name + ' enabled', 'success');
+    } else {
+      track.style.background = 'var(--border-light)';
+      thumb.style.transform  = 'translateX(0)';
+      showToast(name + ' disabled', 'info');
+    }
+  }
+
+  function confirmDelete() {
+    if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+      if (confirm('All your transactions, budgets and data will be permanently deleted. Continue?')) {
+        window.location.href = '/profile/delete';
+      }
+    }
+  }
+</script>
+
+</body>
+</html>

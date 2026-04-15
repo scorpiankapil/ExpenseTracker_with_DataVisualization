@@ -1,0 +1,96 @@
+<!--
+  SIDEBAR PARTIAL
+  ───────────────
+  Used on all app pages (dashboard, transactions, budget, reports).
+  The "page" variable passed from EJS determines which nav item is active.
+  The "user" variable shows the logged-in user's name and email.
+-->
+
+<!-- Mobile hamburger toggle -->
+<button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle Sidebar">
+  <svg data-feather="menu" width="20" height="20"></svg>
+</button>
+
+<!-- Sidebar -->
+<aside class="sidebar" id="sidebar">
+
+  <!-- Logo -->
+  <div class="sidebar-logo">
+    <a href="/dashboard" class="logo">
+      <div class="logo-icon">₹</div>
+      <span class="logo-text">ExpenseIQ</span>
+    </a>
+  </div>
+
+  <!-- Logged-in user info -->
+  <div class="sidebar-user">
+    <div class="user-avatar">
+      <!-- Show first letter of user's name -->
+      <%= user && user.name ? user.name.charAt(0).toUpperCase() : 'U' %>
+    </div>
+    <div style="overflow:hidden;">
+      <span class="user-name"><%= user ? user.name : 'User' %></span>
+      <span class="user-email"><%= user ? user.email : 'user@example.com' %></span>
+    </div>
+  </div>
+
+  <!-- Navigation Links -->
+  <nav class="sidebar-nav">
+
+    <p class="nav-section-label">Main</p>
+
+    <a href="/dashboard"
+       class="nav-item <%= page === 'dashboard' ? 'active' : '' %>">
+      <svg class="nav-icon" data-feather="grid"></svg>
+      Dashboard
+    </a>
+
+    <a href="/transactions"
+       class="nav-item <%= page === 'transactions' ? 'active' : '' %>">
+      <svg class="nav-icon" data-feather="repeat"></svg>
+      Transactions
+    </a>
+
+    <a href="/budget"
+       class="nav-item <%= page === 'budget' ? 'active' : '' %>">
+      <svg class="nav-icon" data-feather="target"></svg>
+      Budget
+    </a>
+
+    <a href="/reports"
+       class="nav-item <%= page === 'reports' ? 'active' : '' %>">
+      <svg class="nav-icon" data-feather="bar-chart-2"></svg>
+      Reports
+    </a>
+
+    <p class="nav-section-label" style="margin-top:10px;">Account</p>
+
+    <a href="/profile"
+       class="nav-item <%= page === 'profile' ? 'active' : '' %>">
+      <svg class="nav-icon" data-feather="user"></svg>
+      Profile
+    </a>
+
+    <a href="/settings"
+       class="nav-item <%= page === 'settings' ? 'active' : '' %>">
+      <svg class="nav-icon" data-feather="settings"></svg>
+      Settings
+    </a>
+
+  </nav>
+
+  <!-- Logout at the bottom -->
+  <div class="sidebar-bottom">
+    <a href="/auth/logout" class="nav-item" style="color: var(--expense);">
+      <svg class="nav-icon" data-feather="log-out"></svg>
+      Logout
+    </a>
+  </div>
+
+</aside>
+
+<!-- Mobile overlay (click to close sidebar) -->
+<div id="sidebarOverlay"
+     style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:190;"
+     onclick="closeSidebar()">
+</div>

@@ -1,0 +1,416 @@
+<%- include('partials/header', { title: 'Reports - ExpenseIQ' }) %>
+
+<div class="app-layout">
+  <%- include('partials/sidebar', { page: 'reports', user: user }) %>
+
+  <div class="main-content">
+
+    <!-- TOPBAR -->
+    <div class="topbar">
+      <div class="topbar-left">
+        <span class="topbar-title">Reports & Analytics</span>
+        <span class="topbar-date">Understand your spending deeply</span>
+      </div>
+      <div class="topbar-right">
+
+        <!-- FIX: Direct links instead of buttons — 100% working -->
+        <a href="/reports/export?format=csv" class="btn btn-outline btn-sm">
+          <svg data-feather="file-text" width="14" height="14"></svg>
+          CSV
+        </a>
+        <a href="/reports/export?format=pdf" class="btn btn-primary btn-sm">
+          <svg data-feather="download" width="14" height="14"></svg>
+          Export PDF
+        </a>
+
+      </div>
+    </div>
+
+
+    <div class="page-body">
+
+      <!-- 1. FILTER BAR -->
+      <div class="reports-filter mb-24">
+        <div class="filter-item">
+          <label>Date From</label>
+          <input type="date" class="filter-control" id="dateFrom"
+            value="<%= new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0] %>" />
+        </div>
+
+        <div class="filter-item">
+          <label>Date To</label>
+          <input type="date" class="filter-control" id="dateTo"
+            value="<%= new Date().toISOString().split('T')[0] %>" />
+        </div>
+
+        <div class="filter-item">
+          <label>Category</label>
+          <select class="filter-control" id="filterCat">
+            <option value="all">All Categories</option>
+            <option value="Food">Food</option>
+            <option value="Travel">Travel</option>
+            <option value="Rent">Rent</option>
+            <option value="Shopping">Shopping</option>
+            <option value="Health">Health</option>
+            <option value="Entertainment">Entertainment</option>
+          </select>
+        </div>
+
+        <div class="filter-item">
+          <label>Type</label>
+          <select class="filter-control" id="filterType">
+            <option value="all">All Types</option>
+            <option value="income">Income Only</option>
+            <option value="expense">Expense Only</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button class="btn btn-primary btn-sm" onclick="applyFilter()">
+            <svg data-feather="filter" width="13" height="13"></svg>
+            Apply
+          </button>
+          <button class="btn btn-outline btn-sm" onclick="window.location.href='/reports'">
+            Reset
+          </button>
+        </div>
+      </div>
+
+
+      <!-- 2. SUMMARY CARDS — Real data from controller -->
+      <%
+        const income  = summary ? summary.income  : 0;
+        const expense = summary ? summary.expense : 0;
+        const saved   = income - expense;
+        const rate    = income > 0 ? Math.round((saved / income) * 100) : 0;
+        const txCount = transactions ? transactions.length : 0;
+      %>
+
+      <div class="cards-grid mb-24">
+
+        <!-- Total Income -->
+        <div class="summary-card card-income">
+          <div class="card-top">
+            <span class="card-label">Total Income</span>
+            <div class="card-icon icon-income">
+              <svg data-feather="arrow-up-circle" width="18" height="18"></svg>
+            </div>
+          </div>
+          <div class="card-amount">₹<%= income.toLocaleString('en-IN') %></div>
+          <div class="card-trend">This period</div>
+        </div>
+
+        <!-- Total Expense -->
+        <div class="summary-card card-expense">
+          <div class="card-top">
+            <span class="card-label">Total Expense</span>
+            <div class="card-icon icon-expense">
+              <svg data-feather="arrow-down-circle" width="18" height="18"></svg>
+            </div>
+          </div>
+          <div class="card-amount">₹<%= expense.toLocaleString('en-IN') %></div>
+          <div class="card-trend">This period</div>
+        </div>
+
+        <!-- Total Saved -->
+        <div class="summary-card card-savings">
+          <div class="card-top">
+            <span class="card-label">Total Saved</span>
+            <div class="card-icon icon-savings">
+              <svg data-feather="save" width="18" height="18"></svg>
+            </div>
+          </div>
+          <div class="card-amount">₹<%= saved.toLocaleString('en-IN') %></div>
+          <div class="card-trend">
+            <span class="trend-up"><%= rate %>% savings rate</span>
+          </div>
+        </div>
+
+        <!-- Total Transactions -->
+        <div class="summary-card card-balance">
+          <div class="card-top">
+            <span class="card-label">Transactions</span>
+            <div class="card-icon icon-balance">
+              <svg data-feather="list" width="18" height="18"></svg>
+            </div>
+          </div>
+          <div class="card-amount"><%= txCount %></div>
+          <div class="card-trend">This period</div>
+        </div>
+
+      </div>
+
+
+      <!-- 3. CHARTS ROW 1 -->
+      <div class="charts-row mb-24">
+
+        <!-- Monthly Bar/Line Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Monthly Income vs Expense</div>
+              <div class="card-subtitle">Last 6 months overview</div>
+            </div>
+            <div class="tab-switcher">
+              <button class="tab-btn active" onclick="toggleChart('bar', this)">Bar</button>
+              <button class="tab-btn"        onclick="toggleChart('line', this)">Line</button>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="monthlyChart" height="240"></canvas>
+          </div>
+        </div>
+
+        <!-- Category Pie Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Spending by Category</div>
+              <div class="card-subtitle">Percentage breakdown</div>
+            </div>
+          </div>
+          <div class="card-body" style="display:flex;flex-direction:column;align-items:center;gap:14px;">
+            <canvas id="reportPie" width="200" height="200"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- 4. CHARTS ROW 2 -->
+      <div class="charts-row-equal mb-24">
+
+        <!-- Weekly Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Weekly Spending Pattern</div>
+              <div class="card-subtitle">Day-by-day this week</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="weeklyChart" height="200"></canvas>
+          </div>
+        </div>
+
+        <!-- Savings Trend Chart -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">Savings Rate Trend</div>
+              <div class="card-subtitle">Monthly savings % over time</div>
+            </div>
+          </div>
+          <div class="card-body">
+            <canvas id="savingsChart" height="200"></canvas>
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- 5. TOP EXPENSES TABLE — Real transactions data -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Recent Transactions</div>
+          <span class="text-small text-muted"><%= txCount %> total</span>
+        </div>
+
+        <% if (transactions && transactions.length > 0) { %>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Transaction</th>
+                  <th>Category</th>
+                  <th>Type</th>
+                  <th>Date</th>
+                  <th class="text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% transactions.slice(0, 10).forEach(function(tx, i) { %>
+                  <tr>
+                    <td style="color:var(--text-3);font-size:13px;"><%= i + 1 %></td>
+                    <td><span class="tx-name"><%= tx.title %></span></td>
+                    <td>
+                      <span class="badge badge-<%= tx.category.toLowerCase() %>">
+                        <%= tx.category %>
+                      </span>
+                    </td>
+                    <td>
+                      <span class="badge <%= tx.type === 'income' ? 'badge-income' : 'badge-expense' %>">
+                        <%= tx.type === 'income' ? '↑ Income' : '↓ Expense' %>
+                      </span>
+                    </td>
+                    <td style="color:var(--text-2);font-size:13px;">
+                      <%= new Date(tx.date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' }) %>
+                    </td>
+                    <td class="text-right">
+                      <span class="<%= tx.type === 'income' ? 'amount-in' : 'amount-out' %>">
+                        <%= tx.type === 'income' ? '+' : '-' %>₹<%= tx.amount.toLocaleString('en-IN') %>
+                      </span>
+                    </td>
+                  </tr>
+                <% }); %>
+              </tbody>
+            </table>
+          </div>
+        <% } else { %>
+          <div class="empty-state">
+            <div class="empty-icon">📊</div>
+            <h3>No transactions found</h3>
+            <p>Add transactions to see your reports</p>
+          </div>
+        <% } %>
+      </div>
+
+    </div><!-- /page-body -->
+  </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="/js/main.js"></script>
+<script>
+  feather.replace();
+
+  // ── Chart common styles
+  const GRID = '#1a2840';
+  const TEXT = '#7a90b5';
+  const FONT = 'DM Sans';
+
+  // ── 1. Monthly Bar Chart
+  let monthlyChart = new Chart(document.getElementById('monthlyChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Oct','Nov','Dec','Jan','Feb','Mar'],
+      datasets: [
+        { label:'Income',  data:[38000,40000,52000,42000,38000,42500], backgroundColor:'rgba(0,200,150,0.7)', borderRadius:6 },
+        { label:'Expense', data:[24000,27000,35000,28000,25000,28000], backgroundColor:'rgba(255,77,109,0.7)', borderRadius:6 }
+      ]
+    },
+    options: {
+      responsive: true,
+      interaction: { mode:'index', intersect:false },
+      plugins: {
+        legend: { labels: { color:TEXT, font:{family:FONT,size:12}, usePointStyle:true, padding:16 } }
+      },
+      scales: {
+        x: { ticks:{color:TEXT,font:{family:FONT}}, grid:{color:GRID} },
+        y: { ticks:{color:TEXT,font:{family:FONT},callback:v=>'₹'+v.toLocaleString('en-IN')}, grid:{color:GRID} }
+      }
+    }
+  });
+
+  // Bar <-> Line switch
+  function toggleChart(type, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    if (type === 'line') {
+      monthlyChart.data.datasets[0].backgroundColor = 'rgba(0,200,150,0.08)';
+      monthlyChart.data.datasets[0].borderColor  = '#00c896';
+      monthlyChart.data.datasets[0].fill    = true;
+      monthlyChart.data.datasets[0].tension = 0.4;
+      monthlyChart.data.datasets[1].backgroundColor = 'rgba(255,77,109,0.08)';
+      monthlyChart.data.datasets[1].borderColor  = '#ff5c7a';
+      monthlyChart.data.datasets[1].fill    = true;
+      monthlyChart.data.datasets[1].tension = 0.4;
+    } else {
+      monthlyChart.data.datasets[0].backgroundColor = 'rgba(0,200,150,0.7)';
+      monthlyChart.data.datasets[1].backgroundColor = 'rgba(255,77,109,0.7)';
+    }
+    monthlyChart.config.type = type;
+    monthlyChart.update();
+  }
+
+  // ── 2. Category Pie Chart
+  new Chart(document.getElementById('reportPie'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Food','Rent','Travel','Shopping','Health','Other'],
+      datasets: [{
+        data: [8960,7840,5040,3360,1960,840],
+        backgroundColor: ['#f59e0b','#ff5c7a','#4f8dff','#a78bfa','#00c896','#3d526e'],
+        borderColor: '#111827',
+        borderWidth: 3,
+        hoverOffset: 8,
+      }]
+    },
+    options: {
+      responsive: false,
+      cutout: '65%',
+      plugins: {
+        legend: { position:'bottom', labels:{color:TEXT,font:{family:FONT,size:12},padding:14,boxWidth:12} }
+      }
+    }
+  });
+
+  // ── 3. Weekly Chart
+  new Chart(document.getElementById('weeklyChart'), {
+    type: 'bar',
+    data: {
+      labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],
+      datasets: [{
+        label: 'Spent (₹)',
+        data: [1200,450,2300,800,3100,4500,1800],
+        backgroundColor: ctx => {
+          const v = ctx.raw;
+          return v > 3000 ? 'rgba(255,77,109,0.7)' :
+                 v > 1500 ? 'rgba(245,158,11,0.7)' :
+                            'rgba(79,141,255,0.7)';
+        },
+        borderRadius: 6,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend:{display:false} },
+      scales: {
+        x: { ticks:{color:TEXT,font:{family:FONT}}, grid:{display:false} },
+        y: { ticks:{color:TEXT,font:{family:FONT},callback:v=>'₹'+v}, grid:{color:GRID} }
+      }
+    }
+  });
+
+  // ── 4. Savings Trend Chart
+  new Chart(document.getElementById('savingsChart'), {
+    type: 'line',
+    data: {
+      labels: ['Oct','Nov','Dec','Jan','Feb','Mar'],
+      datasets: [{
+        label: 'Savings %',
+        data: [36.8,32.5,32.7,33.3,34.2,34.1],
+        borderColor: '#00c896',
+        backgroundColor: 'rgba(0,200,150,0.08)',
+        fill: true,
+        tension: 0.4,
+        pointBackgroundColor: '#00c896',
+        pointRadius: 5,
+        borderWidth: 2.5,
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend:{display:false} },
+      scales: {
+        x: { ticks:{color:TEXT,font:{family:FONT}}, grid:{color:GRID} },
+        y: { ticks:{color:TEXT,font:{family:FONT},callback:v=>v+'%'}, grid:{color:GRID} }
+      }
+    }
+  });
+
+  // ── Apply filter
+  function applyFilter() {
+    const from = document.getElementById('dateFrom').value;
+    const to   = document.getElementById('dateTo').value;
+    const cat  = document.getElementById('filterCat').value;
+    const type = document.getElementById('filterType').value;
+    window.location.href = `/reports?from=${from}&to=${to}&category=${cat}&type=${type}`;
+  }
+
+</script>
+
+</body>
+</html>
