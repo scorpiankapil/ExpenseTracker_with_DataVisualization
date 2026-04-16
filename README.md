@@ -1,4 +1,4 @@
-# ExpenseIQ — Expense Tracker with Data Visualization
+# ExpenseIQ: Expense Tracker with Data Visualization
 
 B.Tech CSE 3rd Year Mini Project — Bridge Labzz
 
